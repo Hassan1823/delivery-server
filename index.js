@@ -27,6 +27,11 @@ app.use("/api/product", productRoutes);
 app.use("/api/customer", customerRoutes);
 app.use("/api/shipping", shippingRoutes);
 
+// ~ setting the server is running
+app.get("/", (req, res) => {
+  res.send("<h1>🚀 Server is Running ...</h1>");
+});
+
 app.listen(PORT, () => {
   connectToMongoDB();
   console.log(`🚀 Server is running on port ${PORT}`);

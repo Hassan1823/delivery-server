@@ -7,95 +7,273 @@ import sendEmail from "../utils/mailSender.js";
 import Token from "../models/token.model.js";
 import crypto from "crypto";
 import { Frontend_URL } from "../lib/data.js";
+import { config } from "dotenv";
 
-export const signup = async (req, res) => {
+import jwt from "jsonwebtoken";
+
+import nodemailer from "nodemailer";
+import ErrorHandler from "../utils/ErrorHandler.js";
+
+config();
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  auth: {
+    user: "hassan.zaib223@gmail.com",
+    pass: "tsxzlidxxevakbqe",
+  },
+});
+
+// export const signup = async (req, res) => {
+//   try {
+//     const { fullName, username, email, password, confirmPassword, gender } =
+//       req.body;
+
+//     if (password !== confirmPassword) {
+//       return res.status(400).json({ message: "Passwords don't match" });
+//     }
+
+//     const user = await User.findOne({ username });
+
+//     if (user) {
+//       return res.status(400).json({ message: "Username already exists" });
+//     }
+
+//     const emailExists = await User.findOne({ email });
+
+//     if (emailExists) {
+//       return res.status(400).json({ message: "Email already exists" });
+//     }
+
+//     // https://avatar-placeholder.iran.liara.run/
+
+//     const newUser = new User({
+//       fullName,
+//       username,
+//       password,
+//       gender,
+//       email,
+//     });
+
+//     if (newUser) {
+//       // Generate JWT token here
+//       const activationToken = generateTokenAndSetCookie(newUser._id, res);
+//       await newUser.save();
+//       let otp = otpGenerator.generate(6, {
+//         upperCaseAlphabets: false,
+//         lowerCaseAlphabets: false,
+//         specialChars: false,
+//       });
+
+//       let result = await OTP.findOne({ otp: otp });
+//       while (result) {
+//         otp = otpGenerator.generate(6, {
+//           upperCaseAlphabets: false,
+//         });
+//         result = await OTP.findOne({ otp: otp });
+//       }
+
+//       // const activationToken = createActivationToken(user)
+
+//       const otpPayload = { email, otp, user: newUser._id };
+//       const otpBody = await OTP.create(otpPayload);
+//       // * sending otp to user email
+//       // try {
+//       //   const mailOptions = {
+//       //     from: "hassan.zaib223@gmail.com",
+//       //     to: email,
+//       //     subject: "OPT Verification from Delivery Hero",
+//       //     html: ` <p>Hey ${username}!</p>
+//       //         <p>This is your 6-digit Otp code ${otp}
+//       //         `,
+//       //   };
+
+//       //   await transporter.sendMail(mailOptions);
+
+//       //   res.status(200).json({
+//       //     success: true,
+//       //     message: "OTP sent successfully",
+//       //   });
+//       // } catch (error) {
+//       //   console.log("Error In Sending Email");
+//       //   console.log(error);
+//       //   res.status(400).json({
+//       //     success: false,
+//       //     message: "Error In Sending Email",
+//       //     otp,
+//       //   });
+//       // }
+//       res.status(200).json({
+//         success: true,
+//         message: "Success",
+//         otp,
+//       });
+//     } else {
+//       res.status(400).json({ error: "Invalid user data" });
+//     }
+//   } catch (error) {
+//     console.log("Error in signup controller", error.message);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// };
+
+export const signup = async (req, res, next) => {
   try {
     const { fullName, username, email, password, confirmPassword, gender } =
       req.body;
 
-    if (password !== confirmPassword) {
-      return res.status(400).json({ error: "Passwords don't match" });
+    // ~ is email already exist
+    const isEmailExist = await User.findOne({ email });
+
+    if (isEmailExist) {
+      return next(new ErrorHandler("Email Already Exist"));
     }
 
-    const user = await User.findOne({ username });
+    // const user = {
+    //   fullName,
+    //   username,
+    //   email,
+    //   password,
+    //   confirmPassword,
+    //   gender,
+    // };
 
-    if (user) {
-      return res.status(400).json({ error: "Username already exists" });
-    }
-
-    const emailExists = await User.findOne({ email });
-
-    if (emailExists) {
-      return res.status(400).json({ error: "Email already exists" });
-    }
-
-    // https://avatar-placeholder.iran.liara.run/
-
-    const newUser = new User({
+    const user = await User.create({
       fullName,
       username,
+      email,
       password,
       gender,
-      email,
     });
 
-    if (newUser) {
-      // Generate JWT token here
-      generateTokenAndSetCookie(newUser._id, res);
-      await newUser.save();
-      let otp = otpGenerator.generate(6, {
-        upperCaseAlphabets: false,
-        lowerCaseAlphabets: false,
-        specialChars: false,
+    if (!user) {
+      res.status(400).json({
+        success: false,
+        message: "Error in Creating user",
       });
-
-      let result = await OTP.findOne({ otp: otp });
-      while (result) {
-        otp = otpGenerator.generate(6, {
-          upperCaseAlphabets: false,
-        });
-        result = await OTP.findOne({ otp: otp });
-      }
-
-      const otpPayload = { email, otp, user: newUser._id };
-      const otpBody = await OTP.create(otpPayload);
-
-      res.status(200).json({
-        success: true,
-        message: "OTP sent successfully",
-        otp,
-      });
-    } else {
-      res.status(400).json({ error: "Invalid user data" });
     }
+
+    const activationToken = createActivationToken(user);
+    const activationCode = activationToken.activationCode;
+
+    const data = { user: { name: user.fullName }, activationCode };
+    const otpPayload = { email, otp: activationCode, user: user._id };
+    const otpBody = await OTP.create(otpPayload);
+
+    // * sending otp to user email
+    // try {
+    //   const mailOptions = {
+    //     from: "hassan.zaib223@gmail.com",
+    //     to: email,
+    //     subject: "OPT Verification from Delivery Hero",
+    //     html: ` <p>Hey ${username}!</p>
+    //         <p>This is your 6-digit Otp code ${otp}
+    //         `,
+    //   };
+
+    //   await transporter.sendMail(mailOptions);
+
+    //   res.status(200).json({
+    //     success: true,
+    //     message: "OTP sent successfully",
+    //   });
+    // } catch (error) {
+    //   console.log("Error In Sending Email");
+    //   console.log(error);
+    //   res.status(400).json({
+    //     success: false,
+    //     message: "Error In Sending Email",
+    //     otp,
+    //   });
+    // }
+
+    res.status(201).json({
+      success: true,
+      message: `Please check your ${user.email}`,
+      activationToken: activationToken.token,
+    });
   } catch (error) {
     console.log("Error in signup controller", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-export const verifyOTP = async (req, res) => {
-  const uOTP = req.body.otp;
-  console.log(uOTP);
 
-  if (uOTP) {
-    const otp = await OTP.findOne({ otp: uOTP });
-    console.log(otp);
-    if (otp) {
-      const user = await User.findById(otp.user);
-      if (user) {
-        user.status = "verified";
-        await user.save();
-        await OTP.deleteMany({ user: user._id });
-        return res.status(200).json({ message: "User verified successfully" });
-      } else {
-        return res.status(404).json({ error: "User not found" });
-      }
-    } else {
-      return res.status(400).json({ error: "Invalid OTP" });
+// ~ create activation token
+export const createActivationToken = (user) => {
+  const activationCode = Math.floor(100000 + Math.random() * 9000).toString();
+
+  console.log("Activation Code :", activationCode);
+
+  const token = jwt.sign(
+    {
+      user,
+      activationCode,
+    },
+    process.env.ACTIVATION_SECRET,
+    {
+      expiresIn: "30m",
     }
-  } else {
-    return res.status(400).json({ error: "Invalid OTP" });
+  );
+
+  return { token, activationCode };
+};
+
+export const verifyOTP = async (req, res, next) => {
+  try {
+    const { activation_code } = req.body;
+
+    // console.log(activation_token ? activation_token : "no activation_token");
+    console.log(activation_code ? activation_code : "no activation_code");
+
+    if (activation_code) {
+      const otp = await OTP.findOne({ otp: activation_code });
+      console.log(otp);
+
+      if (otp || otp !== "" || otp !== null) {
+        const user = await User.findById(otp.user);
+        if (user) {
+          user.status = "admin unverified";
+          await user.save();
+          await OTP.deleteMany({ user: user._id });
+          return res
+            .status(200)
+            .json({ message: "User verified successfully" });
+        } else {
+          return res.status(404).json({ error: "User not found" });
+        }
+      }
+    }
+  } catch (error) {
+    console.log("Failed To verify OTP", error);
+    res.status(400).json({
+      success: false,
+      message: "Failed To verify OTP",
+    });
   }
+  // const uOTP = req.body.otp;
+  // console.log(uOTP);
+
+  // if (uOTP) {
+  //   const otp = await OTP.findOne({ otp: uOTP });
+  //   console.log(otp);
+  //   if (otp) {
+  //     const user = await User.findById(otp.user);
+  //     if (user) {
+  //       user.status = "verified";
+  //       await user.save();
+  //       await OTP.deleteMany({ user: user._id });
+  //       return res.status(200).json({ message: "User verified successfully" });
+  //     } else {
+  //       return res.status(404).json({ error: "User not found" });
+  //     }
+  //   } else {
+  //     return res.status(400).json({ error: "Invalid OTP" });
+  //   }
+  // } else {
+  //   return res.status(400).json({ error: "Invalid OTP" });
+  // }
 };
 
 export const login = async (req, res) => {

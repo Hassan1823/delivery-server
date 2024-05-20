@@ -234,7 +234,7 @@ export const verifyOTP = async (req, res, next) => {
       if (otp || otp !== "" || otp !== null) {
         const user = await User.findById(otp.user);
         if (user) {
-          user.status = "admin unverified";
+          user.status = "verified";
           await user.save();
           await OTP.deleteMany({ user: user._id });
           return res

@@ -305,6 +305,7 @@ export const login = async (req, res) => {
   }
 };
 
+// * logout
 export const logout = (req, res) => {
   try {
     res.cookie("jwt", "", { maxAge: 0 });
@@ -315,10 +316,11 @@ export const logout = (req, res) => {
   }
 };
 
+//* change password
 export const changePassword = async (req, res) => {
   try {
-    const { oldPassword, newPassword } = req.body;
-    const userID = req.user._id;
+    const { oldPassword, newPassword, userID } = req.body;
+    // const userID = req.user._id;
     const user = await User.findById(userID);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -338,6 +340,8 @@ export const changePassword = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// * forgot password
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -382,6 +386,8 @@ export const forgotPassword = async (req, res) => {
     res.json({ err: error.message });
   }
 };
+
+// * reset password
 export const resetPassword = async (req, res) => {
   const { password } = req.body;
   const { resetToken } = req.params;

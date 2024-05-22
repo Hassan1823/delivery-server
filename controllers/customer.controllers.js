@@ -1,6 +1,7 @@
 import Customer from "../models/customer.model.js";
 import User from "../models/user.model.js";
 
+//* create new customers
 export const createCustomer = async (req, res) => {
   try {
     const {
@@ -51,7 +52,7 @@ export const createCustomer = async (req, res) => {
   }
 };
 
-// * get all customers starts here JWT_SECRET
+// * get all customers starts here
 export const getAllCustomers = async (req, res) => {
   try {
     const allCustomers = await User.find();
@@ -77,6 +78,7 @@ export const getAllCustomers = async (req, res) => {
   }
 };
 
+// * view user customers
 export const viewUserCustomers = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -105,10 +107,12 @@ export const viewUserCustomers = async (req, res) => {
       .json({ error: "Internal Server Error", message: error.message });
   }
 };
+
+// * delete customers
 export const deleteCustomer = async (req, res) => {
   try {
     const id = req.params.id;
-    const userID = req.user._id;
+    const userID = req.params.userID;
     const user = await User.findById(userID);
     if (!user) {
       console.log("User not found");
@@ -134,12 +138,20 @@ export const deleteCustomer = async (req, res) => {
   }
 };
 
+// * update customer
 export const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params.id;
-    const { name, email, phone, address, salesChannel, socialUsername } =
-      req.body;
-    const userID = req.user._id;
+    const {
+      name,
+      email,
+      phone,
+      address,
+      salesChannel,
+      socialUsername,
+      userID,
+    } = req.body;
+
     const user = await User.findById(userID);
     if (!user) {
       return res.status(404).json({ message: "User not found" });

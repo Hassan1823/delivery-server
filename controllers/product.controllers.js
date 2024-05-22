@@ -1,5 +1,7 @@
 import User from "../models/user.model.js";
 import Product from "../models/product.model.js";
+import XLSX from "xlsx";
+import csv from "csvtojson";
 
 // * create product
 export const createProduct = async (req, res) => {
@@ -168,6 +170,90 @@ export const updateProduct = async (req, res) => {
     res.status(200).json(updatedProduct);
   } catch (error) {
     console.error("Error in updateProduct controller", error.message);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
+  }
+};
+
+// * uploading products to the database
+
+export const uploadCSVProducts = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No User Found",
+      });
+    }
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    let parsedCsvData;
+
+    if (
+      file.mimetype.startsWith(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      )
+    ) {
+      const workbook = XLSX.readFile(file.path);
+      const sheet_name_list = workbook.SheetNames;
+      const worksheet = workbook.Sheets[sheet_name_list[0]];
+      const csvData = XLSX.utils.sheet_to_csv(worksheet);
+      parsedCsvData = await csv({ noheader: false }).fromString(csvData);
+    } else if (file.mimetype.startsWith("text/csv")) {
+      parsedCsvData = await csv({ noheader: false }).fromFile(file.path);
+    } else {
+      return res.status(400).json({ error: "Unsupported file type" });
+    }
+
+    let tableData = [];
+    for (var x = 0; x < parsedCsvData.length; x++) {
+      const productExists = await Product.findOne({
+        name: parsedCsvData[x].Name,
+      });
+      if (!productExists) {
+        tableData.push({
+          name: parsedCsvData[x].Name,
+          price: parsedCsvData[x]["Selling Price (PKR)"]
+            ? parseFloat(parsedCsvData[x]["Selling Price (PKR)"])
+            : 0,
+          category: parsedCsvData[x].Category ? parsedCsvData[x].Category : "",
+          quantity: parsedCsvData[x].Quantity
+            ? parseInt(parsedCsvData[x].Quantity)
+            : 0,
+          weight: parsedCsvData[x]["Weight (kg)"]
+            ? parseFloat(parsedCsvData[x]["Weight (kg)"])
+            : 0,
+        });
+      }
+    }
+
+    if (tableData.length > 0) {
+      const products = await Product.insertMany(tableData);
+
+      user.products.push(...products.map((product) => product._id));
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: "New Products Uploaded Successfully",
+        data: products,
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "All products were duplicates and not added.",
+      });
+    }
+  } catch (error) {
+    console.error("Error in uploadCSVProducts:", error);
     res
       .status(500)
       .json({ error: "Internal Server Error", message: error.message });

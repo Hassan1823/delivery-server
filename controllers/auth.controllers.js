@@ -19,12 +19,22 @@ config();
 const transporter = nodemailer.createTransport({
   service: "gmail",
   host: "smtp.gmail.com",
-  port: 465,
+  port: 587,
+  secure: false,
   auth: {
     user: "hassan.zaib223@gmail.com",
-    pass: "tsxzlidxxevakbqe",
+    pass: "hrgh zvie esyv kuya",
   },
 });
+
+// const transporter = nodemailer.createTransport({
+//   host: "smtp.ethereal.email",
+//   port: 587,
+//   auth: {
+//     user: "samantha90@ethereal.email",
+//     pass: "EhYgjc9PvkttMsvqvq",
+//   },
+// });
 
 export const signup = async (req, res, next) => {
   try {
@@ -63,7 +73,7 @@ export const signup = async (req, res, next) => {
     // * sending otp to user email
     try {
       const mailOptions = {
-        from: "hassan.zaib223@gmail.com",
+        from: "deliveryhero@gmail.com",
         to: email,
         subject: "OPT Verification from Delivery Hero",
         html: ` <p>Hey ${username}!</p>
@@ -75,7 +85,7 @@ export const signup = async (req, res, next) => {
 
       res.status(200).json({
         success: true,
-        message: "OTP sent successfully",
+        message: `OTP sent to ${email}`,
       });
     } catch (error) {
       console.log("Error In Sending Email");

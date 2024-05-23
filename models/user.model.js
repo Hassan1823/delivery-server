@@ -28,6 +28,12 @@ const userSchema = new mongoose.Schema(
       required: true,
       enum: ["male", "female"],
     },
+    role: {
+      type: String,
+      required: false,
+      default: "user",
+      enum: ["user", "admin"],
+    },
     products: [
       {
         type: mongoose.Schema.Types.ObjectId,

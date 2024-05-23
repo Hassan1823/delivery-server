@@ -35,17 +35,18 @@ const transporter = nodemailer.createTransport({
 //     pass: "EhYgjc9PvkttMsvqvq",
 //   },
 // });
-
 export const signup = async (req, res, next) => {
   try {
     const { fullName, username, email, password, confirmPassword, gender } =
       req.body;
 
-    // ~ is email already exist
     const isEmailExist = await User.findOne({ email });
 
     if (isEmailExist) {
-      return next(new ErrorHandler("Email Already Exist"));
+      return res.status(202).json({
+        success: true,
+        message: "Email Already Exist",
+      });
     }
 
     const user = await User.create({
@@ -57,54 +58,45 @@ export const signup = async (req, res, next) => {
     });
 
     if (!user) {
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         message: "Error in Creating user",
       });
     }
 
-    const activationToken = createActivationToken(user);
-    const activationCode = activationToken.activationCode;
+    const activationCode = Math.floor(100000 + Math.random() * 9000).toString();
 
-    const data = { user: { name: user.fullName }, activationCode };
     const otpPayload = { email, otp: activationCode, user: user._id };
     const otpBody = await OTP.create(otpPayload);
 
-    // * sending otp to user email
+    // Attempt to send OTP
     try {
       const mailOptions = {
         from: "deliveryhero@gmail.com",
         to: email,
         subject: "OPT Verification from Delivery Hero",
-        html: ` <p>Hey ${username}!</p>
-            <p>This is your 6-digit Otp code ${activationCode}
-            `,
+        html: `<p>Hey ${username}!</p><p>This is your 6-digit Otp code ${activationCode}</p>`,
       };
 
       await transporter.sendMail(mailOptions);
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: `OTP sent to ${email}`,
       });
     } catch (error) {
-      console.log("Error In Sending Email");
-      console.log(error);
-      res.status(400).json({
+      console.error("Error In Sending Email", error);
+      return res.status(400).json({
         success: false,
         message: "Error In Sending Email",
         otp: activationCode,
       });
     }
-
-    res.status(201).json({
-      success: true,
-      message: `Please check your ${user.email}`,
-      activationToken: activationToken.token,
-    });
   } catch (error) {
-    console.log("Error in signup controller", error.message);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("Error in signup controller", error.message);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -132,56 +124,28 @@ export const verifyOTP = async (req, res, next) => {
   try {
     const { activation_code } = req.body;
 
-    // console.log(activation_token ? activation_token : "no activation_token");
-    console.log(activation_code ? activation_code : "no activation_code");
+    const otp = await OTP.findOne({ otp: activation_code });
 
-    if (activation_code) {
-      const otp = await OTP.findOne({ otp: activation_code });
-      console.log(otp);
-
-      if (otp || otp !== "" || otp !== null) {
-        const user = await User.findById(otp.user);
-        if (user) {
-          user.status = "verified";
-          await user.save();
-          await OTP.deleteMany({ user: user._id });
-          return res
-            .status(200)
-            .json({ message: "User verified successfully" });
-        } else {
-          return res.status(404).json({ error: "User not found" });
-        }
+    if (otp && otp.user) {
+      const user = await User.findById(otp.user);
+      if (user) {
+        user.status = "verified";
+        await user.save();
+        // await OTP.deleteMany({ user: user._id });
+        res.status(200).json({ message: "User verified successfully" });
+      } else {
+        res.status(404).json({ error: "User not found" });
       }
+    } else {
+      res.status(400).json({ error: "Invalid OTP" });
     }
   } catch (error) {
-    console.log("Failed To verify OTP", error);
+    console.error("Failed To verify OTP", error);
     res.status(400).json({
       success: false,
       message: "Failed To verify OTP",
     });
   }
-  // const uOTP = req.body.otp;
-  // console.log(uOTP);
-
-  // if (uOTP) {
-  //   const otp = await OTP.findOne({ otp: uOTP });
-  //   console.log(otp);
-  //   if (otp) {
-  //     const user = await User.findById(otp.user);
-  //     if (user) {
-  //       user.status = "verified";
-  //       await user.save();
-  //       await OTP.deleteMany({ user: user._id });
-  //       return res.status(200).json({ message: "User verified successfully" });
-  //     } else {
-  //       return res.status(404).json({ error: "User not found" });
-  //     }
-  //   } else {
-  //     return res.status(400).json({ error: "Invalid OTP" });
-  //   }
-  // } else {
-  //   return res.status(400).json({ error: "Invalid OTP" });
-  // }
 };
 
 export const login = async (req, res) => {

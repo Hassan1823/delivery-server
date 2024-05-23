@@ -26,99 +26,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// export const signup = async (req, res) => {
-//   try {
-//     const { fullName, username, email, password, confirmPassword, gender } =
-//       req.body;
-
-//     if (password !== confirmPassword) {
-//       return res.status(400).json({ message: "Passwords don't match" });
-//     }
-
-//     const user = await User.findOne({ username });
-
-//     if (user) {
-//       return res.status(400).json({ message: "Username already exists" });
-//     }
-
-//     const emailExists = await User.findOne({ email });
-
-//     if (emailExists) {
-//       return res.status(400).json({ message: "Email already exists" });
-//     }
-
-//     // https://avatar-placeholder.iran.liara.run/
-
-//     const newUser = new User({
-//       fullName,
-//       username,
-//       password,
-//       gender,
-//       email,
-//     });
-
-//     if (newUser) {
-//       // Generate JWT token here
-//       const activationToken = generateTokenAndSetCookie(newUser._id, res);
-//       await newUser.save();
-//       let otp = otpGenerator.generate(6, {
-//         upperCaseAlphabets: false,
-//         lowerCaseAlphabets: false,
-//         specialChars: false,
-//       });
-
-//       let result = await OTP.findOne({ otp: otp });
-//       while (result) {
-//         otp = otpGenerator.generate(6, {
-//           upperCaseAlphabets: false,
-//         });
-//         result = await OTP.findOne({ otp: otp });
-//       }
-
-//       // const activationToken = createActivationToken(user)
-
-//       const otpPayload = { email, otp, user: newUser._id };
-//       const otpBody = await OTP.create(otpPayload);
-//       // * sending otp to user email
-//       // try {
-//       //   const mailOptions = {
-//       //     from: "hassan.zaib223@gmail.com",
-//       //     to: email,
-//       //     subject: "OPT Verification from Delivery Hero",
-//       //     html: ` <p>Hey ${username}!</p>
-//       //         <p>This is your 6-digit Otp code ${otp}
-//       //         `,
-//       //   };
-
-//       //   await transporter.sendMail(mailOptions);
-
-//       //   res.status(200).json({
-//       //     success: true,
-//       //     message: "OTP sent successfully",
-//       //   });
-//       // } catch (error) {
-//       //   console.log("Error In Sending Email");
-//       //   console.log(error);
-//       //   res.status(400).json({
-//       //     success: false,
-//       //     message: "Error In Sending Email",
-//       //     otp,
-//       //   });
-//       // }
-//       res.status(200).json({
-//         success: true,
-//         message: "Success",
-//         otp,
-//       });
-//     } else {
-//       res.status(400).json({ error: "Invalid user data" });
-//     }
-//   } catch (error) {
-//     console.log("Error in signup controller", error.message);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
-
 export const signup = async (req, res, next) => {
   try {
     const { fullName, username, email, password, confirmPassword, gender } =
@@ -130,15 +37,6 @@ export const signup = async (req, res, next) => {
     if (isEmailExist) {
       return next(new ErrorHandler("Email Already Exist"));
     }
-
-    // const user = {
-    //   fullName,
-    //   username,
-    //   email,
-    //   password,
-    //   confirmPassword,
-    //   gender,
-    // };
 
     const user = await User.create({
       fullName,
@@ -163,31 +61,31 @@ export const signup = async (req, res, next) => {
     const otpBody = await OTP.create(otpPayload);
 
     // * sending otp to user email
-    // try {
-    //   const mailOptions = {
-    //     from: "hassan.zaib223@gmail.com",
-    //     to: email,
-    //     subject: "OPT Verification from Delivery Hero",
-    //     html: ` <p>Hey ${username}!</p>
-    //         <p>This is your 6-digit Otp code ${otp}
-    //         `,
-    //   };
+    try {
+      const mailOptions = {
+        from: "hassan.zaib223@gmail.com",
+        to: email,
+        subject: "OPT Verification from Delivery Hero",
+        html: ` <p>Hey ${username}!</p>
+            <p>This is your 6-digit Otp code ${activationCode}
+            `,
+      };
 
-    //   await transporter.sendMail(mailOptions);
+      await transporter.sendMail(mailOptions);
 
-    //   res.status(200).json({
-    //     success: true,
-    //     message: "OTP sent successfully",
-    //   });
-    // } catch (error) {
-    //   console.log("Error In Sending Email");
-    //   console.log(error);
-    //   res.status(400).json({
-    //     success: false,
-    //     message: "Error In Sending Email",
-    //     otp,
-    //   });
-    // }
+      res.status(200).json({
+        success: true,
+        message: "OTP sent successfully",
+      });
+    } catch (error) {
+      console.log("Error In Sending Email");
+      console.log(error);
+      res.status(400).json({
+        success: false,
+        message: "Error In Sending Email",
+        otp: activationCode,
+      });
+    }
 
     res.status(201).json({
       success: true,

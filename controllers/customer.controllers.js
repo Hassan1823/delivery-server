@@ -26,17 +26,17 @@ export const createCustomer = async (req, res) => {
         message: "User not found",
       });
     }
-    const customer = new Customer({
+    const customer = {
       name,
       email,
       phone,
       address,
       salesChannel,
       socialUsername,
-    });
+    };
 
-    const newCustomer = await customer.save();
-    user.customers.push(customer._id);
+    const newCustomer = await Customer.create(customer);
+    user.customers.push(newCustomer._id);
     await user.save();
 
     res.status(201).json({
@@ -55,19 +55,33 @@ export const createCustomer = async (req, res) => {
 // * get all customers starts here
 export const getAllCustomers = async (req, res) => {
   try {
-    const allCustomers = await User.find();
-    if (!allCustomers || allCustomers.length === 0) {
+    const allCustomers = await User.find().populate("customers");
+    let customers = [];
+
+    // Iterate over each user in allCustomers
+    allCustomers.forEach((user) => {
+      // Check if the user has any customers
+      if (user.customers && user.customers.length > 0) {
+        // Push each customer into the customers array
+        user.customers.forEach((customer) => {
+          customers.push(customer);
+        });
+      }
+    });
+
+    // Check if any customers were found
+    if (customers.length === 0) {
       return res.status(201).json({
         success: false,
         message: "No customers found",
-        data: allCustomers,
+        data: customers,
       });
     }
 
     res.status(200).json({
       success: true,
       message: "Customers Found",
-      data: allCustomers,
+      data: customers,
     });
   } catch (error) {
     console.log("Error in getting all customers ::", error);
@@ -138,6 +152,25 @@ export const deleteCustomer = async (req, res) => {
   }
 };
 
+// * admin delete customers
+export const adminDeleteCustomer = async (req, res) => {
+  try {
+    const id = req.params.id;
+    // const userID = req.params.userID;
+    const deleteCustomer = await Customer.findByIdAndDelete(id);
+
+    if (!deleteCustomer) {
+      res.status(404).json({ message: "Customer Not Found" });
+    }
+    res.status(200).json({ message: "Customer deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleteCustomer controller", error.message);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
+  }
+};
+
 // * update customer
 export const updateCustomer = async (req, res) => {
   try {
@@ -158,6 +191,41 @@ export const updateCustomer = async (req, res) => {
     }
     if (!user.customers.includes(id)) {
       return res.status(404).json({ message: "Customer not found" });
+    }
+    const updateCustomer = await Customer.findByIdAndUpdate(
+      id,
+      {
+        name,
+        email,
+        phone,
+        address,
+        salesChannel,
+        socialUsername,
+      },
+      { new: true }
+    );
+    res.status(200).json(updateCustomer);
+  } catch (error) {
+    console.error("Error in updateCustomer controller", error.message);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
+  }
+};
+
+// * admin update customer
+export const adminUpdateCustomer = async (req, res) => {
+  try {
+    const { id } = req.params.id;
+    const { name, email, phone, address, salesChannel, socialUsername } =
+      req.body;
+
+    const customer = await Customer.findById(id);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer Not Found",
+      });
     }
     const updateCustomer = await Customer.findByIdAndUpdate(
       id,

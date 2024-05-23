@@ -4,6 +4,7 @@ import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
 import mongoose from "mongoose";
 
+// * add shipping
 export const createShipping = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -72,6 +73,82 @@ export const createShipping = async (req, res) => {
   }
 };
 
+// * update status
+export const updateShippingStatus = async (req, res) => {
+  const id = req.params.id;
+  const { status } = req.body;
+
+  try {
+    const shipping = await Shipping.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!shipping) {
+      return res.status(404).json({ error: "Shipping not found" });
+    }
+
+    res.status(200).json(shipping);
+  } catch (error) {
+    console.error("Error updating shipping status", error.message);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
+  }
+};
+
+// * view admin shipments
+export const adminViewUserShipping = async (req, res) => {
+  try {
+    const user = await User.find().populate({
+      path: "shippings",
+      populate: [
+        {
+          path: "product",
+          model: "Product",
+        },
+        {
+          path: "customer",
+          model: "Customer",
+        },
+      ],
+    });
+
+    // if (!user || user.length === 0) {
+    let shippings = [];
+
+    // Iterate over each user in allCustomers
+    user.forEach((user) => {
+      // Check if the user has any customers
+      if (user.shippings && user.shippings.length > 0) {
+        // Push each customer into the shippings array
+        user.shippings.forEach(async (customer) => {
+          shippings.push(customer);
+        });
+      }
+    });
+
+    if (shippings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Shipments not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Shipments Found",
+      data: shippings,
+    });
+  } catch (error) {
+    console.error("Error in viewUserProducts controller", error.message);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", message: error.message });
+  }
+};
+
+// * view user shipments
 export const viewUserShipping = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -98,5 +175,29 @@ export const viewUserShipping = async (req, res) => {
     res
       .status(500)
       .json({ error: "Internal Server Error", message: error.message });
+  }
+};
+
+// * shipping status ACCESS_TOKEN
+export const shippingStatus = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const shipping = await Shipping.findById(id);
+    if (!shipping) {
+      return res.status(404).json({
+        success: false,
+        message: "Shipping not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Shipping Found",
+      data: shipping,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error ",
+    });
   }
 };

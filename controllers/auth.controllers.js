@@ -37,8 +37,15 @@ const transporter = nodemailer.createTransport({
 // });
 export const signup = async (req, res, next) => {
   try {
-    const { fullName, username, email, password, confirmPassword, gender } =
-      req.body;
+    const {
+      fullName,
+      username,
+      email,
+      password,
+      confirmPassword,
+      gender,
+      role,
+    } = req.body;
 
     const isEmailExist = await User.findOne({ email });
 
@@ -55,6 +62,7 @@ export const signup = async (req, res, next) => {
       email,
       password,
       gender,
+      role,
     });
 
     if (!user) {
@@ -69,7 +77,7 @@ export const signup = async (req, res, next) => {
     const otpPayload = { email, otp: activationCode, user: user._id };
     const otpBody = await OTP.create(otpPayload);
 
-    // Attempt to send OTP
+    //* Attempt to send OTP
     try {
       const mailOptions = {
         from: "deliveryhero@gmail.com",
@@ -77,12 +85,28 @@ export const signup = async (req, res, next) => {
         subject: "OPT Verification from Delivery Hero",
         html: `<p>Hey ${username}!</p><p>This is your 6-digit Otp code ${activationCode}</p>`,
       };
-
       await transporter.sendMail(mailOptions);
+
+      if (role === "admin" || role === "Admin" || role === "ADMIN") {
+        const adminMailOptions = {
+          from: "deliveryhero@gmail.com",
+          to: "hassan.zaib223@gmail.com",
+          subject: "Admin Signup verification",
+          html: `<div>
+          <p>Please Click the Link below to verify account </p>
+          <a target="_blank"
+          href="${Frontend_URL}/${user?._id}"
+          rel="noopener"
+          > Click Here </a>
+          
+          </div>`,
+        };
+        await transporter.sendMail(adminMailOptions);
+      }
 
       return res.status(200).json({
         success: true,
-        message: `OTP sent to ${email}`,
+        message: `verification sent to ${email}`,
       });
     } catch (error) {
       console.error("Error In Sending Email", error);
@@ -132,7 +156,9 @@ export const verifyOTP = async (req, res, next) => {
         user.status = "verified";
         await user.save();
         // await OTP.deleteMany({ user: user._id });
-        res.status(200).json({ message: "User verified successfully" });
+        res
+          .status(200)
+          .json({ message: "User verified successfully", data: user });
       } else {
         res.status(404).json({ error: "User not found" });
       }
@@ -165,11 +191,7 @@ export const login = async (req, res) => {
     // console.log('token', token);
 
     res.status(200).json({
-      _id: user._id,
-      fullName: user.fullName,
-      username: user.username,
-      email: user.email,
-      status: user.status,
+      data: user,
     });
   } catch (error) {
     console.log("Error in login controller", error.message);
@@ -281,5 +303,69 @@ export const resetPassword = async (req, res) => {
     user.password = password;
     await user.save();
     res.status(200).json("Password reset successfully");
+  }
+};
+
+// * get user starts here
+export const getUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    const user = await User.findById(userId);
+    if (user) {
+      res.status(200).json({
+        success: true,
+        message: "User Found",
+        data: user,
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+// * verify admin status starts here
+export const verifyAdminStatus = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { status } = req.body;
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(200).json({
+        success: true,
+        message: "User Found",
+        data: user,
+      });
+    } else {
+      if (status === true) {
+        user.isVerified = true;
+        await user.save();
+        res.status(200).json({
+          success: true,
+          message: "User Status Verified ",
+          data: user,
+        });
+      } else {
+        await user.deleteOne();
+        res.status(200).json({
+          success: true,
+          message: "User Status Rejected ",
+          data: user,
+        });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: true,
+      message: "Internal Server Error ",
+    });
   }
 };

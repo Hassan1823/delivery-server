@@ -7,6 +7,8 @@ import {
   verifyOTP,
   forgotPassword,
   resetPassword,
+  getUser,
+  verifyAdminStatus,
 } from "../controllers/auth.controllers.js";
 import protectRoute from "../middleware/protectedRoute.js";
 
@@ -24,5 +26,7 @@ router.post("/activateUser", verifyOTP);
 router.patch("/verifyotp", verifyOTP);
 router.post("/forgot-password", forgotPassword);
 router.post("/resetPassword/:resetToken", resetPassword);
+router.get("/getUser/:userId", getUser);
+router.post("/verifyAdmin/:userId", verifyAdminStatus);
 
 export default router;

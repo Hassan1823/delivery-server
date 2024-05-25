@@ -103,7 +103,7 @@ export const viewUserCustomers = async (req, res) => {
     }
 
     if (!user.customers || user.customers.length === 0) {
-      res.status(201).json({
+      return res.status(201).json({
         success: false,
         message: "No Customers Found",
         data: user.customers,

@@ -35,6 +35,8 @@ const transporter = nodemailer.createTransport({
 //     pass: "EhYgjc9PvkttMsvqvq",
 //   },
 // });
+
+// * signup
 export const signup = async (req, res, next) => {
   try {
     const {
@@ -90,8 +92,8 @@ export const signup = async (req, res, next) => {
       // if (role === "admin" || role === "Admin" || role === "ADMIN") {
       const adminMailOptions = {
         from: "deliveryhero@gmail.com",
-        to: "hassan.zaib223@gmail.com",
-        // to: "ayeshanoreen9716@gmail.com",
+        // to: "hassan.zaib223@gmail.com",
+        to: "ayeshanoreen9716@gmail.com",
         subject: `${role} Signup verification`,
         html: `<div>
           <p>Please Click the Link below to verify account </p>
@@ -145,6 +147,7 @@ export const createActivationToken = (user) => {
   return { token, activationCode };
 };
 
+// * verify user
 export const verifyOTP = async (req, res, next) => {
   try {
     const { activation_code } = req.body;
@@ -175,6 +178,7 @@ export const verifyOTP = async (req, res, next) => {
   }
 };
 
+// * login user
 export const login = async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -187,9 +191,6 @@ export const login = async (req, res) => {
     if (!user || !isPasswordCorrect) {
       return res.status(400).json({ error: "Invalid username or password" });
     }
-
-    const token = generateTokenAndSetCookie(user._id, res);
-    // console.log('token', token);
 
     res.status(200).json({
       data: user,

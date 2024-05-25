@@ -92,8 +92,8 @@ export const signup = async (req, res, next) => {
       // if (role === "admin" || role === "Admin" || role === "ADMIN") {
       const adminMailOptions = {
         from: "deliveryhero@gmail.com",
-        // to: "hassan.zaib223@gmail.com",
-        to: "ayeshanoreen9716@gmail.com",
+        to: "hassan.zaib223@gmail.com",
+        // to: "ayeshanoreen9716@gmail.com",
         subject: `${role} Signup verification`,
         html: `<div>
           <p>Please Click the Link below to verify account </p>

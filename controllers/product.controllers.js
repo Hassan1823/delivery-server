@@ -259,3 +259,55 @@ export const uploadCSVProducts = async (req, res) => {
       .json({ error: "Internal Server Error", message: error.message });
   }
 };
+
+//* search products by name
+export const searchProductByName = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { name } = req.body;
+
+    if (!name || name === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Please Enter Some Value",
+      });
+    }
+
+    const user = await User.findById(userId).populate("products");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Please Login First",
+      });
+    }
+
+    const products = user.products;
+    if (!products || products.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No Products Available",
+      });
+    }
+
+    const matchingProducts = products.filter((product) =>
+      product.name.toLowerCase().includes(name.toLowerCase())
+    );
+
+    if (matchingProducts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found with the given name",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      products: matchingProducts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};

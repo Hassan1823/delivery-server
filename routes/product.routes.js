@@ -9,6 +9,7 @@ import {
   updateProduct,
   getAllProducts,
   uploadCSVProducts,
+  searchProductByName,
 } from "../controllers/product.controllers.js";
 
 const router = express.Router();
@@ -42,5 +43,6 @@ router.get("/getproducts/:userId", viewUserProducts);
 router.post("/createproduct", createProduct);
 router.delete("/deleteproduct/:id/:userId", deleteProduct);
 router.put("/updateproduct/:id", updateProduct);
+router.post("/searchProducts/:userId", searchProductByName);
 
 export default router;

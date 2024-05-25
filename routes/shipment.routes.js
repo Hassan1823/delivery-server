@@ -4,6 +4,7 @@ import protectRoute from "../middleware/protectedRoute.js";
 const router = express.Router();
 import {
   adminViewUserShipping,
+  cancelShipment,
   createShipping,
   searchShippingByName,
   shippingStatus,
@@ -17,5 +18,6 @@ router.get("/view-adminShippings", adminViewUserShipping);
 router.post("/updateStatus/:id", updateShippingStatus);
 router.get("/shippingStatus/:id", shippingStatus);
 router.post("/searchShippings/:userId", searchShippingByName);
+router.delete("/cancelShipment/:shippingId", cancelShipment);
 
 export default router;

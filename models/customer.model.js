@@ -31,6 +31,11 @@ const customerSchema = new mongoose.Schema(
       required: false,
       default: 0,
     },
+    cancelOrders: {
+      type: Number,
+      required: false,
+      default: 0,
+    },
   },
   {
     timestamps: true,

@@ -65,7 +65,7 @@ export const createShipping = async (req, res) => {
     customer.delivery += 1;
     await customer.save();
 
-    res.status(201).json(shipping);
+    res.status(201).json({ shipping, cancelOrders: customer.cancelOrders });
   } catch (error) {
     console.error("Error in createShipping controller", error.message);
     await session.abortTransaction();
@@ -254,6 +254,46 @@ export const searchShippingByName = async (req, res) => {
     return res.status(200).json({
       success: true,
       shippings: filteredShippings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+// * cancel shipment for customer
+export const cancelShipment = async (req, res) => {
+  try {
+    const shippingId = req.params.shippingId;
+    const shipping = await Shipping.findById(shippingId);
+
+    if (!shipping) {
+      return res.status(404).json({
+        success: false,
+        message: "No Shipping Found",
+      });
+    }
+
+    const customer = await Customer.findById(shipping.customer);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "No Customer Found",
+      });
+    }
+    if (customer.delivery >= 1) {
+      customer.delivery -= 1;
+      await customer.save();
+    }
+    customer.cancelOrders += 1;
+    await customer.save();
+    await Shipping.findByIdAndDelete(shippingId);
+
+    res.status(200).json({
+      success: true,
+      message: "Shipping Deleted Successfully",
     });
   } catch (error) {
     res.status(500).json({

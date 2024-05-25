@@ -247,3 +247,54 @@ export const adminUpdateCustomer = async (req, res) => {
       .json({ error: "Internal Server Error", message: error.message });
   }
 };
+
+// * search customers by name
+export const searchCustomerByName = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { name } = req.body;
+    if (!name || name === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Please Enter Some Value",
+      });
+    }
+
+    const user = await User.findById(userId).populate("customers");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Please Login First",
+      });
+    }
+
+    const customers = user.customers;
+    if (!customers || customers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No customers Available",
+      });
+    }
+
+    const matchingCustomers = customers.filter((customer) =>
+      customer.name.toLowerCase().includes(name.toLowerCase())
+    );
+
+    if (matchingCustomers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found with the given name",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      customers: matchingCustomers,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};

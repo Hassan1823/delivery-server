@@ -62,6 +62,9 @@ export const createShipping = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
+    customer.delivery += 1;
+    await customer.save();
+
     res.status(201).json(shipping);
   } catch (error) {
     console.error("Error in createShipping controller", error.message);
@@ -178,7 +181,7 @@ export const viewUserShipping = async (req, res) => {
   }
 };
 
-// * shipping status ACCESS_TOKEN
+// * shipping status
 export const shippingStatus = async (req, res) => {
   try {
     const id = req.params.id;
@@ -198,6 +201,64 @@ export const shippingStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal Server Error ",
+    });
+  }
+};
+
+// * search shippings by name
+export const searchShippingByName = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { name } = req.body;
+    if (!name || name === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Please Enter Some Value",
+      });
+    }
+
+    const user = await User.findById(userId).populate({
+      path: "shippings",
+      populate: [
+        {
+          path: "product",
+          model: "Product",
+        },
+        {
+          path: "customer",
+          model: "Customer",
+        },
+      ],
+    });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Please Login First",
+      });
+    }
+
+    const shippings = user.shippings;
+
+    // Filter shippings based on the name parameter
+    const filteredShippings = shippings.filter((shipping) =>
+      shipping.customer.name.toLowerCase().includes(name.toLowerCase())
+    );
+
+    if (filteredShippings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No shipments found with the given name",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      shippings: filteredShippings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
     });
   }
 };

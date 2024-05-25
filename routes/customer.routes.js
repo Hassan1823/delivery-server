@@ -9,6 +9,7 @@ import {
   getAllCustomers,
   adminDeleteCustomer,
   adminUpdateCustomer,
+  searchCustomerByName,
 } from "../controllers/customer.controllers.js";
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.delete("/deletecustomer/:id/:userID", deleteCustomer);
 router.delete("/adminDeletecustomer/:id", adminDeleteCustomer);
 router.put("/updatecustomer/:id", updateCustomer);
 router.put("/adminUpdateCustomer/:id", adminUpdateCustomer);
+router.post("/searchCustomers/:userId", searchCustomerByName);
 
 export default router;

@@ -87,13 +87,13 @@ export const signup = async (req, res, next) => {
       };
       await transporter.sendMail(mailOptions);
 
-      if (role === "admin" || role === "Admin" || role === "ADMIN") {
-        const adminMailOptions = {
-          from: "deliveryhero@gmail.com",
-          // to: "hassan.zaib223@gmail.com",
-          to: "ayeshanoreen9716@gmail.com",
-          subject: "Admin Signup verification",
-          html: `<div>
+      // if (role === "admin" || role === "Admin" || role === "ADMIN") {
+      const adminMailOptions = {
+        from: "deliveryhero@gmail.com",
+        to: "hassan.zaib223@gmail.com",
+        // to: "ayeshanoreen9716@gmail.com",
+        subject: `${role} Signup verification`,
+        html: `<div>
           <p>Please Click the Link below to verify account </p>
           <a target="_blank"
           href="${Frontend_URL}/${user?._id}"
@@ -101,9 +101,9 @@ export const signup = async (req, res, next) => {
           > Click Here </a>
           
           </div>`,
-        };
-        await transporter.sendMail(adminMailOptions);
-      }
+      };
+      await transporter.sendMail(adminMailOptions);
+      // }
 
       return res.status(200).json({
         success: true,

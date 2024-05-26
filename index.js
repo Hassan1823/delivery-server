@@ -14,13 +14,16 @@ const PORT = process.env.PORT || 8000;
 
 app.use(express.json());
 //app.use(urlencoded({ extended: true }))
-// app.use(cors());
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "https://delivery-clinet.vercel.app"],
-    credentials: true,
-  })
-);
+app.use(cors());
+// app.use(
+//   cors({
+//     origin: [
+//       "http://localhost:3000",
+//       "https://delivery-clinet.vercel.app, http://localhost:8080",
+//     ],
+//     credentials: true,
+//   })
+// );
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);

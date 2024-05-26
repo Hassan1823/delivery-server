@@ -92,8 +92,8 @@ export const signup = async (req, res, next) => {
       // if (role === "admin" || role === "Admin" || role === "ADMIN") {
       const adminMailOptions = {
         from: "deliveryhero@gmail.com",
-        // to: "hassan.zaib223@gmail.com",
-        to: "ayeshanoreen9716@gmail.com",
+        to: "hassan.zaib223@gmail.com",
+        // to: "ayeshanoreen9716@gmail.com",
         subject: `${role} Signup verification`,
         html: `<div>
           <p>Please Click the Link below to verify account </p>
@@ -368,6 +368,66 @@ export const verifyAdminStatus = async (req, res) => {
     res.status(500).json({
       success: true,
       message: "Internal Server Error ",
+    });
+  }
+};
+
+// * get all users for admin
+export const getAllUsers = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    const user = await User.findById(userId);
+    if (!user || user.role === "user") {
+      return res.status(202).json({
+        success: false,
+        message: "You Are Not Allowed",
+      });
+    }
+    const allUser = await User.find();
+    if (!allUser || allUser.length === 0) {
+      return res.status(402).json({
+        success: false,
+        message: "No User Found",
+        data: allUser,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User Found",
+      data: allUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+// * delete user
+export const deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const deleteUser = await User.findByIdAndDelete(userId);
+
+    if (!deleteUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User Not Found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User Deleted Successfully",
+      data: deleteUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
     });
   }
 };

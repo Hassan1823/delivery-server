@@ -181,8 +181,7 @@ export const updateProduct = async (req, res) => {
 export const uploadCSVProducts = async (req, res) => {
   try {
     const userId = req.params.userId;
-
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).populate("products");
 
     if (!user) {
       return res.status(404).json({
@@ -190,6 +189,7 @@ export const uploadCSVProducts = async (req, res) => {
         message: "No User Found",
       });
     }
+
     const file = req.file;
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -213,13 +213,10 @@ export const uploadCSVProducts = async (req, res) => {
       return res.status(400).json({ error: "Unsupported file type" });
     }
 
-    let tableData = [];
+    let insertedProducts = [];
     for (var x = 0; x < parsedCsvData.length; x++) {
-      const productExists = await Product.findOne({
-        name: parsedCsvData[x].Name,
-      });
-      if (!productExists) {
-        tableData.push({
+      try {
+        const product = new Product({
           name: parsedCsvData[x].Name,
           price: parsedCsvData[x]["Selling Price (PKR)"]
             ? parseFloat(parsedCsvData[x]["Selling Price (PKR)"])
@@ -231,30 +228,35 @@ export const uploadCSVProducts = async (req, res) => {
           weight: parsedCsvData[x]["Weight (kg)"]
             ? parseFloat(parsedCsvData[x]["Weight (kg)"])
             : 0,
+          userId: userId,
         });
+        await product.save();
+        insertedProducts.push(product);
+      } catch (error) {
+        if (error.code !== 11000) {
+          console.error("Error inserting product:", error);
+        }
       }
     }
 
-    if (tableData.length > 0) {
-      const products = await Product.insertMany(tableData);
-
-      user.products.push(...products.map((product) => product._id));
+    if (insertedProducts.length > 0) {
+      user.products.push(...insertedProducts.map((product) => product._id));
       await user.save();
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: "New Products Uploaded Successfully",
-        data: products,
+        data: insertedProducts,
       });
     } else {
-      res.status(200).json({
-        success: true,
-        message: "All products were duplicates and not added.",
+      return res.status(200).json({
+        success: false,
+        message: "No new products uploaded",
       });
     }
   } catch (error) {
     console.error("Error in uploadCSVProducts:", error);
-    res
+    return res
       .status(500)
       .json({ error: "Internal Server Error", message: error.message });
   }

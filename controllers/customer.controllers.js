@@ -14,11 +14,7 @@ export const createCustomer = async (req, res) => {
       userID,
     } = req.body;
 
-    //     const userID = req.user._id;
-
-    //     console.log("user ID ::", userID ? userID : "no userID");
-
-    const user = await User.findById(userID);
+    const user = await User.findById(userID).populate("customers");
 
     if (!user) {
       return res.status(404).json({
@@ -26,6 +22,26 @@ export const createCustomer = async (req, res) => {
         message: "User not found",
       });
     }
+
+    const customers = user.customers;
+    let duplicateFound = false;
+
+    if (customers && customers.length !== 0) {
+      for (let i = 0; i < customers.length; i++) {
+        if (customers[i].email === email) {
+          duplicateFound = true;
+          break; // Exit the loop early if a duplicate is found
+        }
+      }
+    }
+
+    if (duplicateFound) {
+      return res.status(202).json({
+        success: false,
+        message: "Customer Already Added",
+      });
+    }
+
     const customer = {
       name,
       email,

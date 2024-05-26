@@ -9,6 +9,8 @@ import {
   resetPassword,
   getUser,
   verifyAdminStatus,
+  getAllUsers,
+  deleteUser,
 } from "../controllers/auth.controllers.js";
 import protectRoute from "../middleware/protectedRoute.js";
 
@@ -28,5 +30,7 @@ router.post("/forgot-password", forgotPassword);
 router.post("/resetPassword/:resetToken", resetPassword);
 router.get("/getUser/:userId", getUser);
 router.post("/verifyAdmin/:userId", verifyAdminStatus);
+router.get("/getAllUsers/:userId", getAllUsers);
+router.delete("/deleteUser/:userId", deleteUser);
 
 export default router;

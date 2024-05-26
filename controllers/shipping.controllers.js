@@ -43,6 +43,7 @@ export const createShipping = async (req, res) => {
       totalPrice,
       totalWeight,
       shippingCost,
+      productName: product.name,
       brand: brandName,
     });
 

@@ -16,6 +16,10 @@ const shippingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    customerName: {
+      type: String,
+      required: true,
+    },
     totalPrice: {
       type: Number,
       required: true,

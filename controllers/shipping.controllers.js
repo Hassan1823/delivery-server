@@ -44,6 +44,7 @@ export const createShipping = async (req, res) => {
       totalWeight,
       shippingCost,
       productName: product.name,
+      customerName: customer.name,
       brand: brandName,
     });
 
@@ -80,7 +81,7 @@ export const createShipping = async (req, res) => {
 // * update status
 export const updateShippingStatus = async (req, res) => {
   const id = req.params.id;
-  const { status } = req.body;
+  const status = req.params.status;
 
   try {
     const shipping = await Shipping.findByIdAndUpdate(
@@ -202,6 +203,52 @@ export const shippingStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal Server Error ",
+    });
+  }
+};
+
+// * admin search shippings by name
+export const adminSearchShippingByName = async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || name === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Please Enter Some Value",
+      });
+    }
+
+    // Fetch all shippings across all users, including nested customer and product documents
+    const shippings = await Shipping.find({})
+      .populate({
+        path: "customer",
+        model: "Customer",
+      })
+      .populate({
+        path: "product",
+        model: "Product",
+      });
+
+    // Filter shippings based on the name parameter
+    const filteredShippings = shippings.filter((shipping) =>
+      shipping.customer.name.toLowerCase().includes(name.toLowerCase())
+    );
+
+    if (filteredShippings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No shipments found with the given name",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      shippings: filteredShippings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
     });
   }
 };

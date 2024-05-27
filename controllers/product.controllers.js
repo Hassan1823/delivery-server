@@ -313,3 +313,46 @@ export const searchProductByName = async (req, res) => {
     });
   }
 };
+
+//* search products by name
+export const searchAllProductByName = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || name === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Please Enter Some Value",
+      });
+    }
+
+    const products = await Product.find();
+    if (!products || products.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No Products Available",
+      });
+    }
+
+    const matchingProducts = products.filter((product) =>
+      product.name.toLowerCase().includes(name.toLowerCase())
+    );
+
+    if (matchingProducts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found with the given name",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      products: matchingProducts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};

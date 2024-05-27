@@ -10,6 +10,7 @@ import {
   getAllProducts,
   uploadCSVProducts,
   searchProductByName,
+  searchAllProductByName,
 } from "../controllers/product.controllers.js";
 
 const router = express.Router();
@@ -44,5 +45,6 @@ router.post("/createproduct", createProduct);
 router.delete("/deleteproduct/:id/:userId", deleteProduct);
 router.put("/updateproduct/:id", updateProduct);
 router.post("/searchProducts/:userId", searchProductByName);
+router.post("/searchAllProducts", searchAllProductByName);
 
 export default router;

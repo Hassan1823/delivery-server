@@ -375,15 +375,6 @@ export const verifyAdminStatus = async (req, res) => {
 // * get all users for admin
 export const getAllUsers = async (req, res) => {
   try {
-    const userId = req.params.userId;
-
-    const user = await User.findById(userId);
-    if (!user || user.role === "user") {
-      return res.status(202).json({
-        success: false,
-        message: "You Are Not Allowed",
-      });
-    }
     const allUser = await User.find();
     if (!allUser || allUser.length === 0) {
       return res.status(402).json({
@@ -406,6 +397,47 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+// * search users by name
+export const searchUsersByName = async (req, res) => {
+  try {
+    const { name } = req.body; // Extracting the name query parameter
+
+    if (!name) {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required",
+      });
+    }
+
+    const users = await User.find().select("-products -customers -shippings");
+    if (!users || users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No Users Found",
+      });
+    }
+    const filteredUsers = users.filter((user) =>
+      user.fullName.toLowerCase().includes(name.toLowerCase())
+    );
+    if (filteredUsers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No User found with the given name",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Users Found",
+      data: filteredUsers,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
 // * delete user
 export const deleteUser = async (req, res) => {
   try {

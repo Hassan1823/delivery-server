@@ -6,7 +6,7 @@ import otpGenerator from "otp-generator";
 import sendEmail from "../utils/mailSender.js";
 import Token from "../models/token.model.js";
 import crypto from "crypto";
-import { Frontend_URL } from "../lib/data.js";
+import { adminMail, adminMailPass, Frontend_URL } from "../lib/data.js";
 import { config } from "dotenv";
 
 import jwt from "jsonwebtoken";
@@ -22,8 +22,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: "hassan.zaib223@gmail.com",
-    pass: "hrgh zvie esyv kuya",
+    user: adminMail,
+    pass: adminMailPass,
   },
 });
 
@@ -262,18 +262,22 @@ export const forgotPassword = async (req, res) => {
         expiresAt: Date.now() + 30 * (60 * 1000), // 30 mins
       });
       const resetUrl = `${Frontend_URL}/resetPassword/${resetToken}`;
-      const message = `
-		<h2>Hello ${user.fullName}</h2>
-		<p>You requested for a password reset</p>
-		<p>Please use the url below to reset passsword</p>
-		<p>This link is valid for only 30 minutes</p>
-		<a href=${resetUrl} clicktracking=off>${resetUrl}</a>
-		<p>Regards</p>
-		<p>Pinvent team</p>`;
-      const subject = "Password reset request";
-      const sent_to = user.email;
-      const sent_from = process.env.MAIL_USER;
-      await sendEmail(subject, message, sent_to, sent_from);
+
+      const mailOptions = {
+        from: "deliveryhero@gmail.com",
+        to: user.email,
+        subject: "Password reset request",
+        html: `
+      <h2>Hello ${user.fullName || "user"}</h2>
+      <p>You requested for a password reset</p>
+      <p>Please use the url below to reset passsword</p>
+      <p>This link is valid for only 30 minutes</p>
+      <a href=${resetUrl} clicktracking=off>${resetUrl}</a>
+      <p>Regards</p>
+      <p>Pinvent team</p>`,
+        // sent_to: user.email,
+      };
+      await transporter.sendMail(mailOptions);
       res.json({ success: true, message: "Reset Email sent" });
     } else {
       res.json("user not found");

@@ -75,11 +75,51 @@ export const getAllProducts = async (req, res) => {
 
 // * get user products
 
+// export const viewUserProducts = async (req, res) => {
+//   try {
+//     let userId = req.params.userId;
+
+//     // console.log(userId ? userId : "no user id ");
+
+//     if (!userId) {
+//       res.status(400).json({
+//         success: false,
+//         message: "Please Provide the User ID",
+//       });
+//     }
+
+//     const user = await User.findById(userId).populate("products");
+
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "No user not found",
+//       });
+//     }
+
+//     if (!user?.products || user?.products.length === 0) {
+//       return res.status(200).json({
+//         success: true,
+//         message: "No Products not found",
+//         data: user?.products,
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       data: user?.products,
+//     });
+//   } catch (error) {
+//     console.error("Error in viewUserProducts controller", error.message);
+//     res
+//       .status(500)
+//       .json({ error: "Internal Server Error", message: error.message });
+//   }
+// };
+
 export const viewUserProducts = async (req, res) => {
   try {
     let userId = req.params.userId;
-
-    // console.log(userId ? userId : "no user id ");
 
     if (!userId) {
       res.status(400).json({
@@ -93,27 +133,44 @@ export const viewUserProducts = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "No user not found",
+        message: "No user found",
       });
     }
 
-    if (!user?.products || user?.products.length === 0) {
+    // Create a Set to store unique product names
+    const uniqueProductNames = new Set();
+
+    // Filter out duplicate products based on their names
+    const uniqueProducts = user.products.filter((product) => {
+      if (uniqueProductNames.has(product.name)) {
+        // Delete the duplicate product from the database
+        Product.findByIdAndDelete(product._id);
+        return false;
+      } else {
+        uniqueProductNames.add(product.name);
+        return true;
+      }
+    });
+
+    if (uniqueProducts.length === 0) {
       return res.status(200).json({
         success: true,
-        message: "No Products not found",
-        data: user?.products,
+        message: "No products found",
+        data: [],
       });
     }
 
     res.status(200).json({
       success: true,
-      data: user?.products,
+      message: "Products found",
+      data: uniqueProducts,
     });
   } catch (error) {
     console.error("Error in viewUserProducts controller", error.message);
-    res
-      .status(500)
-      .json({ error: "Internal Server Error", message: error.message });
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: error.message,
+    });
   }
 };
 
